@@ -1,12 +1,10 @@
 package main
 
-// #cgo LDFLAGS: -framework CoreFoundation -framework IOKit
-// #include "main.h"
-import "C"
 import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 )
@@ -53,9 +51,32 @@ func printTimeLog(dir, file string) {
 	}
 }
 
-func main() {
-	if ok := C.createAssertionSuccess(); ok {
-		printTimeLog(LogDirectory, LogFilePath)
-		defer C.releaseAssertionSuccess()
+func disableSleep() error {
+	cmd := exec.Command("pmset", "disablesleep", "1")
+	err := cmd.Run()
+	if err != nil {
+		return err
 	}
+	return nil
+}
+
+func enableSleep() {
+	cmd := exec.Command("pmset", "disablesleep", "0")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+}
+
+func main() {
+	err := disableSleep()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	defer enableSleep()
+
+	printTimeLog(LogDirectory, LogFilePath)
 }
